@@ -25,10 +25,6 @@ mongoose.connect('mongodb://localhost:27017/tiendacrud', { useNewUrlParser: true
 Listar todos los usuarios
 **********************************************************/
 aplicacion.get('/', async(req, res) => {
-    /* const Cat = mongoose.model('Cat', { name: String, apellido: String, edad: Number, direccion: String });
-    const kitty = new Cat({ name: 'Andrea', apellido: 'Lopez Rodriguez', edad: 24, direccion: 'Kr 11 este 45 - 24' });
-    kitty.save().then(() => console.log('meow')); */
-
 
     const lisUsuarios = await Usuarios.find();
     /* if (lisUsuarios.length > 0) {
@@ -44,7 +40,7 @@ aplicacion.get('/', async(req, res) => {
 /**********************************************************
     Registrar un Usuario
 **********************************************************/
-aplicacion.get('/nuevousuario', async(req, res) => {
+aplicacion.get('/nuevousuario', (req, res) => {
     /*  */
     /* try {
 
@@ -67,7 +63,6 @@ aplicacion.post('/procesarRegistro', async(req, res) => {
     const usuario = new Usuarios(req.body);
     await usuario.save();
 
-    console.log(`Datos a insertar \n ${req.body}`)
     res.redirect('/');
 
 });
@@ -78,18 +73,28 @@ aplicacion.post('/procesarRegistro', async(req, res) => {
 /*********************************************************
     Actualizar un usuario
 **********************************************************/
-aplicacion.put('/editarusuario:id', (req, res) => {
+aplicacion.get('/editar/:id', async(req, res) => {
 
+    const { id } = req.params;
+    const usuarioEdit = await Usuarios.findById(id);
+    res.render('paginas/editarUser', { usuario: usuarioEdit });
+
+});
+
+aplicacion.post('/procesarEdicion/:id', async(req, res) => {
+    const { id } = req.params;
+    await Usuarios.update({ _id: id }, req.body);
+    res.redirect('/');
 });
 
 
 /*********************************************************
     Eliminar un usuario
 *********************************************************/
-aplicacion.get('/usuario:numeroId', (req, res) => {
-    const idx = req.params.numeroId;
-    console.log(`Usuario a eliminar ${idx}`);
-    res.send(`Usuario a eliminar ${req.params.numeroId}`);
+aplicacion.get('/dropusuario/:id', async(req, res) => {
+    const { id } = req.params; //obtenemos el id del registro
+    await Usuarios.remove({ _id: id }); //eliminamos el registro
+    res.redirect('/');
 });
 
 
