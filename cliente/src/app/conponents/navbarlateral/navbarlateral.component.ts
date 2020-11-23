@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 
+
 @Component({
   selector: 'app-navbarlateral',
   templateUrl: './navbarlateral.component.html',

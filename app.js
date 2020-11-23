@@ -3,17 +3,28 @@ const path = require('path');
 const bodyParse = require('body-parser');
 const mongoose = require('mongoose');
 const Usuarios = require('./models/usuarios');
-
+const Paises = require('./models/pais');
+const validator = require('validator');
 const aplicacion = express();
+const puerto = 3900;
 
+aplicacion.use(bodyParse.urlencoded({ extended: false }));
 aplicacion.use(bodyParse.json());
-aplicacion.use(bodyParse.urlencoded({ extended: true }));
-aplicacion.set('view engine', 'ejs')
+//aplicacion.set('view engine', 'ejs');
+
+aplicacion.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Headers', 'Authorization, X-API-KEY, Origin, X-Requested-With, Content-Type, Accept, Access-Control-Allow-Request-Method');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
+    res.header('Allow', 'GET, POST, OPTIONS, PUT, DELETE');
+    next();
+});
+
 
 /**********************************************************
     Configuracion 
 **********************************************************/
-aplicacion.set('port', process.env.PORT || 8080)
+aplicacion.set('port', process.env.PORT || puerto)
     /*  1)  Realizamos la conexion con  la base da datos  */
 mongoose.connect('mongodb://localhost:27017/tiendacrud', { useNewUrlParser: true, useUnifiedTopology: true })
     .then(db => console.log(`Conecion exitosa MongoDB`))
@@ -24,46 +35,38 @@ mongoose.connect('mongodb://localhost:27017/tiendacrud', { useNewUrlParser: true
 /**********************************************************
 Listar todos los usuarios
 **********************************************************/
-aplicacion.get('/', async(req, res) => {
+aplicacion.get('/api/usuarios', async(req, res) => {
 
     const lisUsuarios = await Usuarios.find();
-    /* if (lisUsuarios.length > 0) {
-        res.json({ data: lisUsuarios });
+    const paises = await Paises.find();
+    //if (lisUsuarios.length > 0) {
+
+    //res.json({ data: lisUsuarios });
+    return res.status(200).send({
+        status: 'success',
+        usuarios: lisUsuarios,
+        paises: paises
+    });
+    /* 
     } else {
         res.json({ errors: ["No se encontro Informacion"] });
         res.status(404);
     } */
-    res.render('paginas/index', { usuarios: lisUsuarios });
 
 });
 
 /**********************************************************
     Registrar un Usuario
 **********************************************************/
-aplicacion.get('/nuevousuario', (req, res) => {
-    /*  */
-    /* try {
-
-        const usuario = new Usuarios(req.body);
-        await usuario.save();
-
-        res.status(201);
-    } catch {
-        res.json({ errors: ["Error, No se pudo registrar"] });
-        res.status(404);
-    } */
-
-    /* console.log(`Datos a insertar \n ${req.body.nombre}`) */
-    res.render('paginas/nuevoUser');
-
-});
-
-aplicacion.post('/procesarRegistro', async(req, res) => {
+aplicacion.post('/api/nuevousuario', async(req, res) => {
 
     const usuario = new Usuarios(req.body);
     await usuario.save();
 
-    res.redirect('/');
+    return res.status(200).send({
+        status: 'success',
+        usuario
+    });
 
 });
 
@@ -73,28 +76,32 @@ aplicacion.post('/procesarRegistro', async(req, res) => {
 /*********************************************************
     Actualizar un usuario
 **********************************************************/
-aplicacion.get('/editar/:id', async(req, res) => {
+aplicacion.post('/api/editarusuario/:id', async(req, res) => {
+    const { id } = req.params; //obtenemos el id del usuario
+    const datosFinales = req.body;
 
-    const { id } = req.params;
-    const usuarioEdit = await Usuarios.findById(id);
-    res.render('paginas/editarUser', { usuario: usuarioEdit });
+    await Usuarios.update({ _id: id }, datosFinales);
+    return res.status(200).json({
+        status: 'success',
+        usurio: datosFinales
+    });
 
-});
 
-aplicacion.post('/procesarEdicion/:id', async(req, res) => {
-    const { id } = req.params;
-    await Usuarios.update({ _id: id }, req.body);
-    res.redirect('/');
 });
 
 
 /*********************************************************
     Eliminar un usuario
 *********************************************************/
-aplicacion.get('/dropusuario/:id', async(req, res) => {
+aplicacion.get('/api/borrarusuario/:id', async(req, res) => {
+
     const { id } = req.params; //obtenemos el id del registro
+    /* const usuario = await Usuarios.findById(id); //buscar el usuario
+    const datosFinales = req.body; */
+
     await Usuarios.remove({ _id: id }); //eliminamos el registro
-    res.redirect('/');
+    return res.status(200);
+
 });
 
 
